@@ -1,0 +1,964 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Test Kitchen Blog</title>
+  <subtitle>News, updates, and more from Test Kitchen</subtitle>
+  <id>http://kitchen.ci/blog</id>
+  <link href="http://kitchen.ci/blog"/>
+  <link href="http://kitchen.ci/blog/feed.xml" rel="self"/>
+  <updated>2015-04-28T15:30:00Z</updated>
+  <author>
+    <name>Test Kitchen</name>
+  </author>
+  <entry>
+    <title>Test Kitchen Windows Test Flight with Vagrant</title>
+    <link rel="alternate" href="http://kitchen.ci/blog/test-kitchen-windows-test-flight-with-vagrant/"/>
+    <id>http://kitchen.ci/blog/test-kitchen-windows-test-flight-with-vagrant/</id>
+    <published>2015-04-28T15:30:00Z</published>
+    <updated>2015-05-08T16:25:55+00:00</updated>
+    <author>
+      <name>Fletcher Nichol</name>
+    </author>
+    <summary type="html">&lt;p&gt;As mentioned in the &lt;a href="../test-kitchen-1-4-0-release-notes"&gt;1.4.0 release notes&lt;/a&gt;, you can now spin up instances running various versions of Windows. If would you like to try out this new functionality using nothing more than your workstation, read on.&lt;/p&gt;
+
+&lt;p&gt;</summary>
+    <content type="html">&lt;p&gt;As mentioned in the &lt;a href="../test-kitchen-1-4-0-release-notes"&gt;1.4.0 release notes&lt;/a&gt;, you can now spin up instances running various versions of Windows. If would you like to try out this new functionality using nothing more than your workstation, read on.&lt;/p&gt;
+
+&lt;p&gt;&lt;/p&gt;
+
+&lt;p&gt;There are a few things we'll cover in this post:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Installing the vagrant-winrm Vagrant plugin&lt;/li&gt;
+  &lt;li&gt;Building a Windows Vagrant box&lt;/li&gt;
+  &lt;li&gt;Create a sample cookbook using the ChefDK&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;We'll assume that the latest Test Kitchen and Kitchen::Vagrant Driver are installed (see the &lt;a href="../test-kitchen-1-4-0-release-notes"&gt;1.4.0 release notes&lt;/a&gt; for more details).&lt;/p&gt;
+
+&lt;h2 id="windows-with-kitchenvagrant"&gt;Windows with Kitchen::Vagrant&lt;/h2&gt;
+
+&lt;p&gt;The &lt;a href="https://github.com/test-kitchen/kitchen-vagrant/releases/tag/v0.17.0"&gt;kitchen-vagrant 0.17.0&lt;/a&gt; release comes with awareness and support for spinning up Windows instances, so be sure to use this version or higher if Vagrant is your Driver of choice.&lt;/p&gt;
+
+&lt;p&gt;To make the WinRM host and port detection logic work, you will need to install one Vagrant plugin called &lt;code&gt;vagrant-winrm&lt;/code&gt;. To install this, please run the following:&lt;/p&gt;
+
+&lt;pre class="highlight shell"&gt;vagrant plugin install vagrant-winrm
+&lt;/pre&gt;
+&lt;table&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt;Note&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt;You do &lt;strong&gt;not&lt;/strong&gt; want to prepend &lt;code&gt;bundle exec&lt;/code&gt; or anything else; this is a Vagrant plugin and will be available to any future Vagrant projects on your workstation.&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;If you forget this step then don't worry, any &lt;code&gt;kitchen&lt;/code&gt; command that needs it will prompt you like so:&lt;/p&gt;
+
+&lt;pre class="highlight plaintext"&gt;kitchen list
+&amp;gt;&amp;gt;&amp;gt;&amp;gt;&amp;gt;&amp;gt; ------Exception-------
+&amp;gt;&amp;gt;&amp;gt;&amp;gt;&amp;gt;&amp;gt; Class: Kitchen::UserError
+&amp;gt;&amp;gt;&amp;gt;&amp;gt;&amp;gt;&amp;gt; Message: WinRM Transport requires the vagrant-winrm Vagrant plugin to properly communicate with this Vagrant VM. Please install this plugin with: `vagrant plugin install vagrant-winrm' and try again.
+&amp;gt;&amp;gt;&amp;gt;&amp;gt;&amp;gt;&amp;gt; ----------------------
+&amp;gt;&amp;gt;&amp;gt;&amp;gt;&amp;gt;&amp;gt; Please see .kitchen/logs/kitchen.log for more details
+&amp;gt;&amp;gt;&amp;gt;&amp;gt;&amp;gt;&amp;gt; Also try running `kitchen diagnose --all` for configuration
+&lt;/pre&gt;
+&lt;p&gt;Run &lt;code&gt;vagrant plugin install vagrant-winrm&lt;/code&gt; and try again.&lt;/p&gt;
+
+&lt;p&gt;Now, assuming you have a Vagrant base box called "windows-2012r2", you can use a .kitchen.yml similar to:&lt;/p&gt;
+
+&lt;pre class="highlight yaml"&gt;&lt;span class="nn"&gt;---&lt;/span&gt;
+&lt;span class="s"&gt;driver&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;vagrant&lt;/span&gt;
+
+&lt;span class="s"&gt;platforms&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;windows-2012r2&lt;/span&gt;
+
+&lt;span class="s"&gt;suites&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;default&lt;/span&gt;
+&lt;/pre&gt;
+&lt;p&gt;Note that with the updates in kitchen-vagrant you don’t need to set/override a &lt;code&gt;:box&lt;/code&gt;, &lt;code&gt;:box_url&lt;/code&gt;, &lt;code&gt;:communicator&lt;/code&gt;, &lt;code&gt;:guest&lt;/code&gt;, &lt;code&gt;:port&lt;/code&gt;, &lt;code&gt;:username&lt;/code&gt;, or &lt;code&gt;:password&lt;/code&gt;. Sane defaults should apply.&lt;/p&gt;
+
+&lt;p&gt;For anyone who has tried the now defunct windows-guest-support branch, you may have seen extra transport configuration like this:&lt;/p&gt;
+
+&lt;pre class="highlight yaml"&gt;&lt;span class="nn"&gt;---&lt;/span&gt;
+&lt;span class="s"&gt;driver&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;vagrant&lt;/span&gt;
+
+&lt;span class="s"&gt;platforms&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;windows-2012r2&lt;/span&gt;
+    &lt;span class="s"&gt;transport&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+      &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;winrm&lt;/span&gt;
+
+&lt;span class="s"&gt;suites&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;default&lt;/span&gt;
+&lt;/pre&gt;
+&lt;p&gt;This is what Test Kitchen’s going to give you by default for any platform name starting with /^win/ (case insensitive) so add it, or don’t, it should work either way. If you don’t believe me, run &lt;code&gt;kitchen diagnose&lt;/code&gt; against both and note the difference :)&lt;/p&gt;
+
+&lt;p&gt;Any Vagrant base box should have &lt;code&gt;vm.communicator = “winrm”&lt;/code&gt; and &lt;code&gt;vm.guest = “windows”&lt;/code&gt; set by default, otherwise &lt;code&gt;vagrant up&lt;/code&gt; will not be able to correctly boot the VM. Note that there are some Windows base boxes out there with &lt;code&gt;vm.communicator = “ssh”&lt;/code&gt; set, so plan accordingly.&lt;/p&gt;
+
+&lt;h2 id="building-windows-vagrant-boxes"&gt;Building Windows Vagrant Boxes&lt;/h2&gt;
+
+&lt;p&gt;Due to Microsoft's EULA restrictions, it isn't currently possible to distribute Windows Vagrant boxes–even if they are evaluation versions from publicly downloadable ISO images. This leaves us with the task of building the boxes ourselves, but thankfully &lt;a href="https://packer.io/"&gt;Packer&lt;/a&gt; makes this a good deal easier.&lt;/p&gt;
+
+&lt;p&gt;To test the functionality of Test Kitchen in development, the &lt;a href="https://github.com/boxcutter/windows"&gt;boxcutter/windows&lt;/a&gt; was used to create various Windows box versions. You will need &lt;a href="https://packer.io/downloads.html"&gt;Packer&lt;/a&gt; installed but should work on most operating systems. For example, here's how you can build your own Windows Server 2012r2 evaluation box using Boxcutter:&lt;/p&gt;
+
+&lt;pre class="highlight shell"&gt;git clone https://github.com/boxcutter/windows.git
+&lt;span class="nb"&gt;cd &lt;/span&gt;windows
+make virtualbox/eval-win2012r2-standard
+&lt;/pre&gt;
+&lt;p&gt;Note that on my 13" MacBook Retina the download-to-built time was 44 minutes. Long, but not bad considering. Also, if VMware is your cup of tea, try &lt;code&gt;make vmware/eval-win2012r2-standard&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Finally, add the build box to Vagrant, calling it &lt;code&gt;"windows-2012r2"&lt;/code&gt; (a box starting with "win" will help Test Kitchen do the right thing out of the box):&lt;/p&gt;
+
+&lt;pre class="highlight shell"&gt;vagrant box add windows-2012r2 ./box/virtualbox/eval-win2012r2-standard-nocm-1.0.4.box
+&lt;/pre&gt;
+&lt;p&gt;Also note that the &lt;a href="https://github.com/joefitzgerald/packer-windows"&gt;joefitzgerald/packer-windows&lt;/a&gt; also creates a wide variety of Windows Vagrant boxes and may be more your speed if looking for alternatives.&lt;/p&gt;
+
+&lt;h2 id="test-flight"&gt;Test Flight&lt;/h2&gt;
+
+&lt;p&gt;Now that we have a Windows box, let's try it out! This example uses &lt;a href="https://downloads.chef.io/chef-dk/"&gt;ChefDK&lt;/a&gt; to generate a cookbook:&lt;/p&gt;
+
+&lt;pre class="highlight shell"&gt;chef generate cookbook hello
+&lt;span class="nb"&gt;cd &lt;/span&gt;hello
+&lt;/pre&gt;
+&lt;p&gt;Next, we'll edit the &lt;code&gt;.kitchen.yml&lt;/code&gt; file to use a single platform–Windows 2012r2:&lt;/p&gt;
+
+&lt;pre class="highlight yaml"&gt;&lt;span class="nn"&gt;---&lt;/span&gt;
+&lt;span class="s"&gt;driver&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;vagrant&lt;/span&gt;
+
+&lt;span class="s"&gt;provisioner&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;chef_zero&lt;/span&gt;
+
+&lt;span class="s"&gt;platforms&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;windows-2012r2&lt;/span&gt;
+
+&lt;span class="s"&gt;suites&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;default&lt;/span&gt;
+    &lt;span class="s"&gt;run_list&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+      &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;recipe[hello::default]&lt;/span&gt;
+&lt;/pre&gt;
+&lt;p&gt;Finally, let's add a simple &lt;a href="http://docs.chef.io/resource_log.html"&gt;log resource&lt;/a&gt; into our default recipe:&lt;/p&gt;
+
+&lt;pre class="highlight shell"&gt;&lt;span class="nb"&gt;echo&lt;/span&gt; &lt;span class="s1"&gt;'log "Hello, Windows"'&lt;/span&gt; &amp;gt;&amp;gt; recipes/default.rb
+&lt;/pre&gt;
+&lt;p&gt;You should now be able to run &lt;code&gt;kitchen list&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre class="highlight shell"&gt;kitchen list
+&lt;/pre&gt;
+&lt;p&gt;and see our single instance, using the WinRM transport:&lt;/p&gt;
+
+&lt;pre class="highlight plaintext"&gt;Instance                Driver   Provisioner  Verifier  Transport  Last Action
+default-windows-2012r2  Vagrant  ChefZero     Busser    Winrm      &amp;lt;Not Created&amp;gt;
+&lt;/pre&gt;
+&lt;p&gt;Why not give this a spin while we're at it?&lt;/p&gt;
+
+&lt;pre class="highlight shell"&gt;kitchen &lt;span class="nb"&gt;test&lt;/span&gt;
+&lt;/pre&gt;
+&lt;p&gt;You'll see something like the following:&lt;/p&gt;
+
+&lt;pre class="highlight plaintext"&gt;-----&amp;gt; Starting Kitchen (v1.4.0)
+-----&amp;gt; Cleaning up any prior instances of &amp;lt;default-windows-2012r2&amp;gt;
+-----&amp;gt; Destroying &amp;lt;default-windows-2012r2&amp;gt;...
+       Finished destroying &amp;lt;default-windows-2012r2&amp;gt; (0m0.00s).
+-----&amp;gt; Testing &amp;lt;default-windows-2012r2&amp;gt;
+-----&amp;gt; Creating &amp;lt;default-windows-2012r2&amp;gt;...
+       Bringing machine 'default' up with 'vmware_fusion' provider...
+       ==&amp;gt; default: Cloning VMware VM: 'windows-2012r2'. This can take some time...
+       ==&amp;gt; default: Verifying vmnet devices are healthy...
+       ==&amp;gt; default: Preparing network adapters...
+       ==&amp;gt; default: Starting the VMware VM...
+       ==&amp;gt; default: Waiting for machine to boot. This may take a few minutes...
+       ==&amp;gt; default: Machine booted and ready!
+       ==&amp;gt; default: Forwarding ports...
+           default: -- 3389 =&amp;gt; 3389
+           default: -- 5985 =&amp;gt; 5985
+           default: -- 22 =&amp;gt; 2222
+       ==&amp;gt; default: Configuring network adapters within the VM...
+       ==&amp;gt; default: Configuring secondary network adapters through VMware
+       ==&amp;gt; default: on Windows is not yet supported. You will need to manually
+       ==&amp;gt; default: configure the network adapter.
+       ==&amp;gt; default: Machine not provisioning because `--no-provision` is specified.
+       [WinRM] Established
+       Vagrant instance &amp;lt;default-windows-2012r2&amp;gt; created.
+       Finished creating &amp;lt;default-windows-2012r2&amp;gt; (1m3.04s).
+-----&amp;gt; Converging &amp;lt;default-windows-2012r2&amp;gt;...
+       Preparing files for transfer
+       Preparing dna.json
+       Resolving cookbook dependencies with Berkshelf 3.2.3...
+       Removing non-cookbook files before transfer
+       Preparing validation.pem
+       Preparing client.rb
+-----&amp;gt; Installing Chef Omnibus (install only if missing)
+       Downloading package from https://opscode-omnibus-packages.s3.amazonaws.com/windows/2008r2/x86_64/chef-client-12.2.1-1.msi
+       Download complete.
+       Successfully verified C:\Users\vagrant\AppData\Local\Temp\chef-true.msi
+
+       Installing Chef Omnibus package C:\Users\vagrant\AppData\Local\Temp\chef-true.msi
+       Installation complete
+       Transferring files to &amp;lt;default-windows-2012r2&amp;gt;
+       Starting Chef Client, version 12.2.1
+       Creating a new client identity for default-windows-2012r2 using the validator key.
+       [2015-04-27T13:58:06-07:00] WARN: Child with name 'dna.json' found in multiple directories: C:/Users/vagrant/AppData/Local/Temp/kitchen/dna.json and C:/Users/vagrant/AppData/Local/Temp/kitchen/dna.json
+       [2015-04-27T13:58:06-07:00] WARN: Child with name 'dna.json' found in multiple directories: C:/Users/vagrant/AppData/Local/Temp/kitchen/dna.json and C:/Users/vagrant/AppData/Local/Temp/kitchen/dna.json
+       resolving cookbooks for run list: ["hello::default"]
+       [2015-04-27T13:58:06-07:00] WARN: Child with name 'dna.json' found in multiple directories: C:/Users/vagrant/AppData/Local/Temp/kitchen/dna.json and C:/Users/vagrant/AppData/Local/Temp/kitchen/dna.json
+       Synchronizing Cookbooks:
+         - hello
+       Compiling Cookbooks...
+       Converging 1 resources
+       Recipe: hello::default
+         * log[Hello, Windows] action write
+
+
+       Running handlers:
+       Running handlers complete
+       Chef Client finished, 1/1 resources updated in 13.486613 seconds
+       Finished converging &amp;lt;default-windows-2012r2&amp;gt; (2m25.94s).
+-----&amp;gt; Setting up &amp;lt;default-windows-2012r2&amp;gt;...
+       Finished setting up &amp;lt;default-windows-2012r2&amp;gt; (0m0.00s).
+-----&amp;gt; Verifying &amp;lt;default-windows-2012r2&amp;gt;...
+       Preparing files for transfer
+-----&amp;gt; Installing Busser (busser)
+       Successfully installed thor-0.19.0
+       Successfully installed busser-0.7.1
+       2 gems installed
+-----&amp;gt; Setting up Busser
+       Creating BUSSER_ROOT in C:\Users\vagrant\AppData\Local\Temp\verifier
+       Creating busser binstub
+       Installing Busser plugins: busser-serverspec
+       Plugin serverspec installed (version 0.5.6)
+-----&amp;gt; Running postinstall for serverspec plugin
+       Suite path directory C:/Users/vagrant/AppData/Local/Temp/verifier/suites does not exist, skipping.
+       Transferring files to &amp;lt;default-windows-2012r2&amp;gt;
+-----&amp;gt; Running serverspec test suite
+-----&amp;gt; Installing Serverspec..
+-----&amp;gt; serverspec installed (version 2.14.1)
+
+       hello::default
+         does something (PENDING: Replace this with meaningful tests)
+
+       Pending: (Failures listed here are expected and do not affect your suite's status)
+
+         1) hello::default does something
+            # Replace this with meaningful tests
+            # ./AppData/Local/Temp/verifier/suites/serverspec/default_spec.rb:8
+
+       Finished in 0 seconds (files took 0.45317 seconds to load)
+       1 example, 0 failures, 1 pending
+
+       C:/opscode/chef/embedded/bin/ruby.exe -IC:/Users/vagrant/AppData/Local/Temp/verifier/suites/serverspec -I'C:/Users/vagrant/AppData/Local/Temp/verifier/gems/gems/rspec-support-3.2.2/lib';'C:/Users/vagrant/AppData/Local/Temp/verifier/gems/gems/rspec-core-3.2.3/lib' 'C:/Users/vagrant/AppData/Local/Temp/verifier/gems/gems/rspec-core-3.2.3/exe/rspec' --pattern 'C:/Users/vagrant/AppData/Local/Temp/verifier/suites/serverspec/**/*_spec.rb' --color --format documentation --default-path C:/Users/vagrant/AppData/Local/Temp/verifier/suites/serverspec
+       Finished verifying &amp;lt;default-windows-2012r2&amp;gt; (5m28.08s).
+-----&amp;gt; Destroying &amp;lt;default-windows-2012r2&amp;gt;...
+       ==&amp;gt; default: Stopping the VMware VM...
+       ==&amp;gt; default: Deleting the VM...
+       Vagrant instance &amp;lt;default-windows-2012r2&amp;gt; destroyed.
+       Finished destroying &amp;lt;default-windows-2012r2&amp;gt; (0m10.99s).
+       Finished testing &amp;lt;default-windows-2012r2&amp;gt; (9m8.07s).
+-----&amp;gt; Kitchen is finished. (9m10.23s)
+&lt;/pre&gt;
+&lt;p&gt;You might notice that the &lt;code&gt;verify&lt;/code&gt; action takes over 50% of the run time… we have some ideas here, so stay tuned ;)&lt;/p&gt;
+
+&lt;p&gt;In the meantime, happy Windows testing!&lt;/p&gt;
+
+&lt;p&gt;&lt;img alt="Confetti Party" src="/blog/test-kitchen-windows-test-flight-with-vagrant/confetti.gif" /&gt;&lt;/p&gt;
+</content>
+  </entry>
+  <entry>
+    <title>Test Kitchen 1.4.0 Release Notes</title>
+    <link rel="alternate" href="http://kitchen.ci/blog/test-kitchen-1-4-0-release-notes/"/>
+    <id>http://kitchen.ci/blog/test-kitchen-1-4-0-release-notes/</id>
+    <published>2015-04-28T15:00:00Z</published>
+    <updated>2015-05-08T16:25:55+00:00</updated>
+    <author>
+      <name>Fletcher Nichol</name>
+    </author>
+    <summary type="html">&lt;p&gt;For immediate release: &lt;a href="https://github.com/test-kitchen/test-kitchen/releases/tag/v1.4.0"&gt;Test Kitchen 1.4.0&lt;/a&gt; is available on &lt;a href="https://rubygems.org/gems/test-kitchen"&gt;RubyGems&lt;/a&gt;.
+</summary>
+    <content type="html">&lt;p&gt;For immediate release: &lt;a href="https://github.com/test-kitchen/test-kitchen/releases/tag/v1.4.0"&gt;Test Kitchen 1.4.0&lt;/a&gt; is available on &lt;a href="https://rubygems.org/gems/test-kitchen"&gt;RubyGems&lt;/a&gt;.
+&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt;Update 2015-05-08&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt;&lt;em&gt;The installation section has been updated with a link to the ChefDK version that ships Test Kitchen 1.4.0&lt;/em&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Sitting down? Good, this could take a few minutes to read through. Today we're releasing version 1.4.0 of Test Kitchen with a little something for everyone. We have an aggressively reworked plugin system including 2 new plugin concepts (Transport and Verifiers), improved SSH resiliency when instances are booting, first steps at SSH compression to make converges quicker, better HTTP proxy support, a fully realized Windows story, and more.&lt;/p&gt;
+
+&lt;p&gt;Let's dig in a little, shall we?&lt;/p&gt;
+
+&lt;h2 id="installing"&gt;Installing&lt;/h2&gt;
+
+&lt;p&gt;If you use the ChefDK project, then upgrade to &lt;a href="https://downloads.chef.io/chef-dk/"&gt;version 0.5.0&lt;/a&gt; or later to get all the goodies!&lt;/p&gt;
+
+&lt;p&gt;If you have a Ruby workflow with RubyGems and/or Bundler this won’t be too much work:&lt;/p&gt;
+
+&lt;p&gt;Gem install with:&lt;/p&gt;
+
+&lt;pre class="highlight shell"&gt;gem install &lt;span class="nb"&gt;test&lt;/span&gt;-kitchen --version &lt;span class="s2"&gt;"~&amp;gt; 1.4"&lt;/span&gt;
+gem install kitchen-vagrant --version &lt;span class="s2"&gt;"~&amp;gt; 0.17"&lt;/span&gt;
+gem install winrm-transport &lt;span class="c"&gt;# only needed if you want to spin up Windows instances&lt;/span&gt;
+&lt;/pre&gt;
+&lt;p&gt;To use in a project with Bundler, the following goes into your Gemfile:&lt;/p&gt;
+
+&lt;pre class="highlight ruby"&gt;&lt;span class="n"&gt;gem&lt;/span&gt; &lt;span class="s2"&gt;"test-kitchen"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;"~&amp;gt; 1.4"&lt;/span&gt;
+&lt;span class="n"&gt;gem&lt;/span&gt; &lt;span class="s2"&gt;"kitchen-vagrant"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="s2"&gt;"~&amp;gt; 0.17"&lt;/span&gt;
+&lt;span class="n"&gt;gem&lt;/span&gt; &lt;span class="s2"&gt;"winrm-transport"&lt;/span&gt; &lt;span class="c1"&gt;# only needed if you want to spin up Windows instances&lt;/span&gt;
+&lt;/pre&gt;
+&lt;h2 id="windows"&gt;Windows!&lt;/h2&gt;
+
+&lt;p&gt;Note that this release has the much-fabled "Windows guest support". How do you get started? At the moment getting Vagrant base box images of Windows is still a bit of a pain, but if you have access to one, here are the versions that should "just work":&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Windows Server 2012r2&lt;/li&gt;
+  &lt;li&gt;Windows Server 2012r2 Core (you will need .NET 4.5 installed however)&lt;/li&gt;
+  &lt;li&gt;Windows Server 2012 (your system/image must have the KB2842230 hotfix applied (https://support.microsoft.com/en-us/kb/2842230))&lt;/li&gt;
+  &lt;li&gt;Windows Server 2008r2&lt;/li&gt;
+  &lt;li&gt;Windows 8.1 Pro,Enterprise,etc.&lt;/li&gt;
+  &lt;li&gt;Windows 8 Pro,Enterprise,etc. (your system/image must have the KB2842230 hotfix applied (https://support.microsoft.com/en-us/kb/2842230))&lt;/li&gt;
+  &lt;li&gt;Windows 7&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;For a more in-depth example of getting started with Test Kitchen and Windows check out the &lt;a href="../test-kitchen-windows-test-flight-with-vagrant"&gt;Windows Test Flight with Vagrant&lt;/a&gt; blog post.&lt;/p&gt;
+
+&lt;p&gt;Let’s take a peek at some of the other highlights…&lt;/p&gt;
+
+&lt;h2 id="other-highlights"&gt;Other Highlights&lt;/h2&gt;
+
+&lt;h3 id="self-aware-provisioners"&gt;Self-Aware Provisioners&lt;/h3&gt;
+
+&lt;p&gt;This feature introduces a &lt;code&gt;#call(state)&lt;/code&gt; method that exists in &lt;code&gt;Kitchen::Provisioner::Base&lt;/code&gt; which will be invoked by Test Kitchen when the converge action is performed. For backwards compatibility, the same convergence "template" is used, relying on a small number of public methods that return command strings and 3 methods responsible for sandbox creation and cleanup.&lt;/p&gt;
+
+&lt;p&gt;The high-level description of the default &lt;code&gt;#call(state)&lt;/code&gt; method is as follows:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Create the temporary sandbox on the workstation with "stuff" to transfer to the remote instance.&lt;/li&gt;
+  &lt;li&gt;Run the &lt;code&gt;#install_command&lt;/code&gt; on the remote instance, if it is implemented.&lt;/li&gt;
+  &lt;li&gt;Run the &lt;code&gt;#init_command&lt;/code&gt; on the remote instance, if it is implemented.&lt;/li&gt;
+  &lt;li&gt;Transfer all files in the sandbox path to the remote instance's configured &lt;code&gt;:root_path&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;Run the &lt;code&gt;#prepare_command&lt;/code&gt; on the remote instance, if it is implemented.&lt;/li&gt;
+  &lt;li&gt;Run the &lt;code&gt;#run_command&lt;/code&gt; on the remote instance, if it is implemented.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;As a Provisioner author, you may elect to overwrite or partially re-implement the &lt;code&gt;#call(state)&lt;/code&gt; method to do whatever you need in whatever order makes sense. This key difference allows Provisioner authors to entirely own the &lt;code&gt;kitchen converge&lt;/code&gt; action and not rely on the Driver.&lt;/p&gt;
+
+&lt;h3 id="potentially-breaking-provisioners-responsible-for-converge-action"&gt;(Potentially Breaking) Provisioners responsible for converge action&lt;/h3&gt;
+
+&lt;p&gt;This is potentially breaking to Driver authors if all of the following are true:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Your Driver currently directly inherits from &lt;code&gt;Kitchen::Driver::Base&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;Your Driver implements/overrides the &lt;code&gt;#converge&lt;/code&gt; method&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Put another way, your Driver may have issues if it looks like the following:&lt;/p&gt;
+
+&lt;pre class="highlight ruby"&gt;&lt;span class="k"&gt;module&lt;/span&gt; &lt;span class="nn"&gt;Kitchen&lt;/span&gt;
+  &lt;span class="k"&gt;module&lt;/span&gt; &lt;span class="nn"&gt;Driver&lt;/span&gt;
+    &lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;MyDriver&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="no"&gt;Kitchen&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="no"&gt;Driver&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="no"&gt;Base&lt;/span&gt;
+      &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;converge&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;state&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="c1"&gt;# custom converge work&lt;/span&gt;
+      &lt;span class="k"&gt;end&lt;/span&gt;
+    &lt;span class="k"&gt;end&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/pre&gt;
+&lt;p&gt;For the vast majority of open source Drivers in the wild, current behavior is maintained as they all inherit from &lt;code&gt;Kitchen::Driver::SSHBase&lt;/code&gt;. This class has been cemented to preserve its current behavior, and Test Kitchen will invoke the &lt;code&gt;#converge&lt;/code&gt; method for these Drivers.&lt;/p&gt;
+
+&lt;p&gt;A future deprecation process may remove the &lt;code&gt;SSHBase&lt;/code&gt; backwards compatibility, but not without plenty of lead time and warning. Due to the constraints of semantic versioning, by definition, this wouldn't occur before a 2.x codebase release.&lt;/p&gt;
+
+&lt;h3 id="potentially-breaking-transports-responsible-for-login-action"&gt;(Potentially Breaking) Transports responsible for login action&lt;/h3&gt;
+
+&lt;p&gt;This is potentially breaking to Driver authors if all of the following are true:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Your Driver currently inherits from &lt;code&gt;Kitchen::Driver::Base&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;Your Driver implements/overrides the &lt;code&gt;#login_command&lt;/code&gt; method&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Put another way, your Driver may have issues if it looks like the following:&lt;/p&gt;
+
+&lt;pre class="highlight ruby"&gt;&lt;span class="k"&gt;module&lt;/span&gt; &lt;span class="nn"&gt;Kitchen&lt;/span&gt;
+  &lt;span class="k"&gt;module&lt;/span&gt; &lt;span class="nn"&gt;Driver&lt;/span&gt;
+    &lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;MyDriver&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="no"&gt;Kitchen&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="no"&gt;Driver&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="no"&gt;Base&lt;/span&gt;
+      &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;login_command&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;state&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="c1"&gt;# custom converge work&lt;/span&gt;
+      &lt;span class="k"&gt;end&lt;/span&gt;
+    &lt;span class="k"&gt;end&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/pre&gt;
+&lt;p&gt;For the vast majority of open source Drivers in the wild, current behavior is maintained as they all inherit from &lt;code&gt;Kitchen::Driver::SSHBase&lt;/code&gt;. This class has been cemented to preserve its current behavior, and Test Kitchen will invoke the &lt;code&gt;#login_command&lt;/code&gt; method for these Drivers.&lt;/p&gt;
+
+&lt;h3 id="self-aware-verifiers"&gt;Self-Aware Verifiers&lt;/h3&gt;
+
+&lt;p&gt;This feature introduces a &lt;code&gt;#call(state)&lt;/code&gt; method that exists in &lt;code&gt;Kitchen::Verifier::Base&lt;/code&gt; which will be invoked by Test Kitchen when the verify action is performed. The setup action which previously installed the Busser gem and plugins, becomes a dummy or "no-op" action. In other words all previous behavior in the setup action now takes place in the verify action. For backwards compatibility, the same verify "template" is used, relying on a small number of public methods that return strings and 3 new methods responsible for sandbox creation and cleanup (with a very similar implementation to that in Provisioners).&lt;/p&gt;
+
+&lt;p&gt;The high-level description of the default &lt;code&gt;#call(state)&lt;/code&gt; method is as follows:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Create the temporary sandbox on the workstation with "stuff" to transfer to the remote instance.&lt;/li&gt;
+  &lt;li&gt;Run the &lt;code&gt;#install_command&lt;/code&gt; on the remote instance, if it is implemented.&lt;/li&gt;
+  &lt;li&gt;Run the &lt;code&gt;#init_command&lt;/code&gt; on the remote instance, if it is implemented.&lt;/li&gt;
+  &lt;li&gt;Transfer all files in the sandbox path to the Verifier's configured &lt;code&gt;:root_path&lt;/code&gt; on the remote instance.&lt;/li&gt;
+  &lt;li&gt;Run the &lt;code&gt;#prepare_command&lt;/code&gt; on the remote instance, if it is implemented.&lt;/li&gt;
+  &lt;li&gt;Run the &lt;code&gt;#run_command&lt;/code&gt; on the remote instance, if it is implemented.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;As a Verifier author, you may elect to overwrite or partially re-implement the &lt;code&gt;#call(state)&lt;/code&gt; method to do whatever you need in whatever order makes sense. This key difference allows Verifier authors to entirely own the &lt;code&gt;kitchen verify&lt;/code&gt; action and not rely on the Driver.&lt;/p&gt;
+
+&lt;h3 id="potentially-breaking-verifiers-responsible-for-verify-action"&gt;(Potentially Breaking) Verifiers responsible for verify action&lt;/h3&gt;
+
+&lt;p&gt;This is a potentially breaking change to Driver authors if all of the following are true:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Your Driver currently directly inherits from &lt;code&gt;Kitchen::Driver::Base&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;Your Driver implements/overrides the &lt;code&gt;#setup&lt;/code&gt; and/or &lt;code&gt;#verify&lt;/code&gt; methods&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Put another way, your Driver may have issues if it looks like the following:&lt;/p&gt;
+
+&lt;pre class="highlight ruby"&gt;&lt;span class="k"&gt;module&lt;/span&gt; &lt;span class="nn"&gt;Kitchen&lt;/span&gt;
+  &lt;span class="k"&gt;module&lt;/span&gt; &lt;span class="nn"&gt;Driver&lt;/span&gt;
+    &lt;span class="k"&gt;class&lt;/span&gt; &lt;span class="nc"&gt;MyDriver&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="no"&gt;Kitchen&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="no"&gt;Driver&lt;/span&gt;&lt;span class="o"&gt;::&lt;/span&gt;&lt;span class="no"&gt;Base&lt;/span&gt;
+      &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;setup&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;state&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="c1"&gt;# custom setup work&lt;/span&gt;
+      &lt;span class="k"&gt;end&lt;/span&gt;
+
+      &lt;span class="k"&gt;def&lt;/span&gt; &lt;span class="nf"&gt;verify&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;state&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="c1"&gt;# custom verify work&lt;/span&gt;
+      &lt;span class="k"&gt;end&lt;/span&gt;
+    &lt;span class="k"&gt;end&lt;/span&gt;
+  &lt;span class="k"&gt;end&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/pre&gt;
+&lt;p&gt;For the vast majority of open source Drivers in the wild, current behavior is maintained as they all inherit from &lt;code&gt;Kitchen::Driver::SSHBase&lt;/code&gt;. This class has been cemented to preserve its current behavior, and Test Kitchen will invoke the &lt;code&gt;#setup&lt;/code&gt; and &lt;code&gt;#verify&lt;/code&gt; methods for these Drivers.&lt;/p&gt;
+
+&lt;h3 id="add-platform-ostype-for-instance-path-type-hinting"&gt;Add Platform &lt;code&gt;:os_type&lt;/code&gt; for instance path type hinting&lt;/h3&gt;
+
+&lt;p&gt;A new configurable attribute is introduced to a Platform entry called &lt;code&gt;:os_type&lt;/code&gt;. For example:&lt;/p&gt;
+
+&lt;pre class="highlight yaml"&gt;&lt;span class="nn"&gt;---&lt;/span&gt;
+&lt;span class="s"&gt;driver&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;docker&lt;/span&gt;
+
+&lt;span class="s"&gt;provisioner&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;chef_zero&lt;/span&gt;
+
+&lt;span class="s"&gt;platforms&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;ubuntu-14.04&lt;/span&gt;
+    &lt;span class="s"&gt;os_type&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;unix&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;windows-8.1&lt;/span&gt;
+    &lt;span class="s"&gt;os_type&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;windows&lt;/span&gt;
+&lt;/pre&gt;
+&lt;p&gt;The interpretation of &lt;code&gt;:os_type&lt;/code&gt; is very narrowly defined as follows:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code&gt;"windows"&lt;/code&gt; means a Windows operating system, requiring Windows paths such as &lt;code&gt;"C:\\Users"&lt;/code&gt;, &lt;code&gt;"$env:TEMP\\stuff"&lt;/code&gt;, or &lt;code&gt;"%TEMP%\\more"&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;"unix"&lt;/code&gt; means a non-Windows operating system, or UNIX derivative–the implication is essentially the same. This implies unix-style paths such as &lt;code&gt;"some/path/"&lt;/code&gt; or "&lt;code&gt;/absolute/paths/are/nice&lt;/code&gt;".&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;nil&lt;/code&gt; or unset will default to meaning &lt;code&gt;"unix"&lt;/code&gt; to ensure backwards compatibility if values are somehow not properly passed in.&lt;/li&gt;
+  &lt;li&gt;Any other value will be passed down into the system, and allows for some future operating system support or a flag for bizarre custom behavior. This part is where dragons live.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id="add-remote-host-shelltype-hinting-support"&gt;Add remote host &lt;code&gt;:shell_type&lt;/code&gt; hinting support&lt;/h3&gt;
+
+&lt;p&gt;Platform has a new method &lt;code&gt;#shell_type&lt;/code&gt; which will normally return either &lt;code&gt;"powershell"&lt;/code&gt; or &lt;code&gt;"bourne"&lt;/code&gt; depending on the pre-declared capabilities of the remote instance. The implicit default will be &lt;code&gt;"bourne"&lt;/code&gt; for backwards compatibility.&lt;/p&gt;
+
+&lt;h3 id="add-sudocommand-to-provisioners-verifiers--shellout"&gt;Add &lt;code&gt;:sudo_command&lt;/code&gt; to Provisioners, Verifiers, &amp;amp; ShellOut&lt;/h3&gt;
+
+&lt;p&gt;In an effort to better support older distributions (such as CentOS 5), and other distributions which don't ship with sudo in &lt;code&gt;$PATH&lt;/code&gt; (such as Solaris), a new configuration attribute is introduced into &lt;code&gt;Provisioner::Base&lt;/code&gt; and &lt;code&gt;Verifier::Base&lt;/code&gt; called &lt;code&gt;:sudo_command&lt;/code&gt;. For greatest portability and backwards compatibility this defaults to &lt;code&gt;"sudo -E"&lt;/code&gt; but is now customizable depending on your situation.&lt;/p&gt;
+
+&lt;p&gt;For example:&lt;/p&gt;
+
+&lt;pre class="highlight yaml"&gt;&lt;span class="nn"&gt;---&lt;/span&gt;
+&lt;span class="s"&gt;driver&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;vagrant&lt;/span&gt;
+
+&lt;span class="s"&gt;platforms&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;centos-7.0&lt;/span&gt;                      &lt;span class="c1"&gt;# defaults apply&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;centos-5.11&lt;/span&gt;                     &lt;span class="c1"&gt;# removes -E flag&lt;/span&gt;
+    &lt;span class="s"&gt;provisioner&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+      &lt;span class="s"&gt;sudo_command&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;sudo&lt;/span&gt;
+    &lt;span class="s"&gt;verifier&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+      &lt;span class="s"&gt;sudo_command&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;sudo&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;solaris-10&lt;/span&gt;                      &lt;span class="c1"&gt;# sets custom path to sudo&lt;/span&gt;
+    &lt;span class="s"&gt;provisioner&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+      &lt;span class="s"&gt;sudo_command&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;/usr/local/bin/sudo&lt;/span&gt;
+    &lt;span class="s"&gt;verifier&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+      &lt;span class="s"&gt;sudo_command&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;/usr/local/bin/sudo&lt;/span&gt;
+&lt;/pre&gt;
+&lt;p&gt;Note that a future feature proposes a way to remove the provisioner/verifier duplication but this would only be a convenience, not a behavior change.&lt;/p&gt;
+
+&lt;p&gt;Finally, &lt;code&gt;Driver::Base&lt;/code&gt; was not augmented with this configuration attribute as it is no longer responsible for creating the commands to execute on remote instances–this is now solely the purview of Provisioner and Verifier plugins.&lt;/p&gt;
+
+&lt;h3 id="add-plugin-diagnostics-exposed-via-kitchen-diagnose"&gt;Add plugin diagnostics, exposed via &lt;code&gt;kitchen diagnose&lt;/code&gt;&lt;/h3&gt;
+
+&lt;p&gt;This feature adds a new flag to &lt;code&gt;kitchen diagnose&lt;/code&gt;: &lt;code&gt;--plugins&lt;/code&gt; which adds a &lt;code&gt;:plugins&lt;/code&gt; hash to the diagnostic output. It is the unique set of all loaded Driver, Provisioner, Verifier, and Transport plugins which is keyed by the &lt;code&gt;#name&lt;/code&gt; of the plugin.&lt;/p&gt;
+
+&lt;p&gt;For example, a .kitchen.yml with the following configuration:&lt;/p&gt;
+
+&lt;pre class="highlight yaml"&gt;&lt;span class="nn"&gt;---&lt;/span&gt;
+&lt;span class="s"&gt;driver&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;vagrant&lt;/span&gt;
+
+&lt;span class="s"&gt;provisioner&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;chef_zero&lt;/span&gt;
+
+&lt;span class="s"&gt;verifier&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;dummy&lt;/span&gt;
+
+&lt;span class="s"&gt;platforms&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;ubuntu-14.04&lt;/span&gt;
+    &lt;span class="s"&gt;transport&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+      &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;ssh&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;centos-7.0&lt;/span&gt;
+    &lt;span class="s"&gt;driver&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+      &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;docker&lt;/span&gt;
+    &lt;span class="s"&gt;transport&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+      &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;ssh&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;windows-2012r2-core&lt;/span&gt;
+    &lt;span class="s"&gt;transport&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+      &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;winrm&lt;/span&gt;
+&lt;/pre&gt;
+&lt;p&gt;with an invocation of &lt;code&gt;kitchen diagnose --plugins&lt;/code&gt; would produce a diagnostic output similar to:&lt;/p&gt;
+
+&lt;pre class="highlight yaml"&gt;&lt;span class="nn"&gt;---&lt;/span&gt;
+&lt;span class="s"&gt;timestamp&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;2015-03-28 00:43:32 UTC&lt;/span&gt;
+&lt;span class="s"&gt;kitchen_version&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;1.4.0.dev&lt;/span&gt;
+&lt;span class="s"&gt;plugins&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="s"&gt;driver&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+    &lt;span class="s"&gt;Docker&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+      &lt;span class="s"&gt;class&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;Kitchen::Driver::Docker&lt;/span&gt;
+    &lt;span class="s"&gt;Vagrant&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+      &lt;span class="s"&gt;class&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;Kitchen::Driver::Vagrant&lt;/span&gt;
+  &lt;span class="s"&gt;provisioner&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+    &lt;span class="s"&gt;ChefZero&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+      &lt;span class="s"&gt;class&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;Kitchen::Provisioner::ChefZero&lt;/span&gt;
+  &lt;span class="s"&gt;transport&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+    &lt;span class="s"&gt;Ssh&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+      &lt;span class="s"&gt;class&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;Kitchen::Transport::Ssh&lt;/span&gt;
+    &lt;span class="s"&gt;Winrm&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+      &lt;span class="s"&gt;class&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;Kitchen::Transport::Winrm&lt;/span&gt;
+  &lt;span class="s"&gt;verifier&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+    &lt;span class="s"&gt;Dummy&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+      &lt;span class="s"&gt;class&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;Kitchen::Verifier::Dummy&lt;/span&gt;
+&lt;/pre&gt;
+&lt;h3 id="add-keepalive--keepaliveinterval-attributes-to-ssh-transport"&gt;Add &lt;code&gt;:keepalive&lt;/code&gt; &amp;amp; &lt;code&gt;:keepalive_interval&lt;/code&gt; attributes to SSH Transport&lt;/h3&gt;
+
+&lt;p&gt;By default, keepalive packets are enabled with a 60-second interval. Both of these settings are configurable in a transport block, such as:&lt;/p&gt;
+
+&lt;pre class="highlight yaml"&gt;&lt;span class="nn"&gt;---&lt;/span&gt;
+&lt;span class="s"&gt;driver&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;vagrant&lt;/span&gt;
+
+&lt;span class="s"&gt;provisioner&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;chef_zero&lt;/span&gt;
+
+&lt;span class="s"&gt;transport&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;ssh&lt;/span&gt;
+  &lt;span class="s"&gt;keepalive&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;true&lt;/span&gt;
+  &lt;span class="s"&gt;keepalive_interval&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;5&lt;/span&gt;
+
+&lt;span class="s"&gt;platforms&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;ubuntu-14.04&lt;/span&gt;
+
+&lt;span class="s"&gt;suites&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;default&lt;/span&gt;
+&lt;/pre&gt;
+&lt;h3 id="add-default-compression--compressionlevel-attributes-to-ssh-transport"&gt;Add default &lt;code&gt;:compression&lt;/code&gt; &amp;amp; &lt;code&gt;:compression_level&lt;/code&gt; attributes to SSH Transport&lt;/h3&gt;
+
+&lt;p&gt;There are 2 new configuration attributes for all SSH Transports:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code&gt;:compression&lt;/code&gt; - can be set to &lt;code&gt;"zlib"&lt;/code&gt; or &lt;code&gt;"none"&lt;/code&gt;, default is &lt;code&gt;"zlib"&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;:compression_level&lt;/code&gt; - can be set to a number between 0 and 9 where 0 is uncompressed and 9 is maximum compression, default is &lt;code&gt;9&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;These values are passed directly into the &lt;a href="https://github.com/net-ssh/net-ssh/blob/95e2a9404957517061492d880ed7278700e9ad2c/lib/net/ssh.rb#L106-L108"&gt;net-ssh&lt;/a&gt; library when being invoked.&lt;/p&gt;
+
+&lt;h3 id="increased-http-proxy-support-for-executing-commands"&gt;Increased HTTP proxy support for executing commands&lt;/h3&gt;
+
+&lt;p&gt;This release also added more a complete strategy for HTTP proxy variable setting. If both &lt;code&gt;:http_proxy&lt;/code&gt; and &lt;code&gt;:https_proxy&lt;/code&gt; are set, then the following Bourne shell environment variables are exported:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code&gt;http_proxy&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;HTTP_PROXY&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;https_proxy&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;HTTPS_PROXY&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;And the following PowerShell environment variables are set:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code&gt;$env:http_proxy&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;$env:HTTP_PROXY&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;$env:https_proxy&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;$env:HTTPS_PROXY&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;These environment variables will be set for every command executed in the Chef-related and Shell Provisioners, as well as the Busser Verifier.&lt;/p&gt;
+
+&lt;p&gt;The Bourne shell environment variable setting has also changed. Previously they were set with an &lt;code&gt;env&lt;/code&gt; prepended to the &lt;code&gt;sh -c '...'&lt;/code&gt; wrapped command. Now these environment variables are set inside the &lt;code&gt;sh -c '...'&lt;/code&gt; at the top and are exported.&lt;/p&gt;
+
+&lt;p&gt;For example running &lt;code&gt;wget "http://chef.io/chef/install.sh"&lt;/code&gt; with &lt;code&gt;:http_proxy&lt;/code&gt; and &lt;code&gt;:https_proxy&lt;/code&gt; set would generate a command similar to:&lt;/p&gt;
+
+&lt;pre class="highlight shell"&gt;sh -c &lt;span class="s1"&gt;'
+http_proxy="http://proxy"; export http_proxy
+HTTP_PROXY="http://proxy"; export HTTP_PROXY
+https_proxy="https://proxy"; export https_proxy
+HTTPS_PROXY="https://proxy"; export HTTPS_PROXY
+
+wget "http://chef.io/chef/install.sh"
+'&lt;/span&gt;
+&lt;/pre&gt;
+&lt;h3 id="support-symbol-values-in-solorb-chefsolo--clientrb-chefzero"&gt;Support symbol values in solo.rb (chef_solo) &amp;amp; client.rb (chef_zero)&lt;/h3&gt;
+
+&lt;p&gt;This allows for settings such as the following to serialize correctly into &lt;code&gt;client.rb&lt;/code&gt; or &lt;code&gt;solo.rb&lt;/code&gt; (depending on the Provisioner). For example:&lt;/p&gt;
+
+&lt;pre class="highlight yaml"&gt;&lt;span class="nn"&gt;---&lt;/span&gt;
+&lt;span class="s"&gt;driver&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;vagrant&lt;/span&gt;
+
+&lt;span class="s"&gt;provisioner&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;chef_zero&lt;/span&gt;
+  &lt;span class="s"&gt;client_rb&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+    &lt;span class="s"&gt;ssl_verify_mode&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;:verify_none&lt;/span&gt;
+
+&lt;span class="s"&gt;platforms&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;centos-7.0&lt;/span&gt;
+
+&lt;span class="s"&gt;suites&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;default&lt;/span&gt;
+&lt;/pre&gt;
+&lt;h3 id="add-chefmetadataurl-to-chef-provisioners-for-windows-installs"&gt;Add &lt;code&gt;:chef_metadata_url&lt;/code&gt; to Chef Provisioners for Windows installs&lt;/h3&gt;
+
+&lt;p&gt;This configuration attribute is only used for Windows-based platforms and computes a suitable default based on:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;The base of the value of &lt;code&gt;:chef_omnibus_url&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;The version information in &lt;code&gt;:require_chef_omnibus&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;Any project info given in &lt;code&gt;:chef_omnibus_install_options&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;For example, given the following YAML fragment:&lt;/p&gt;
+
+&lt;pre class="highlight yaml"&gt;&lt;span class="nn"&gt;---&lt;/span&gt;
+&lt;span class="s"&gt;provisioner&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;chef_zero&lt;/span&gt;
+  &lt;span class="s"&gt;require_chef_omnibus&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;12.1&lt;/span&gt;
+
+&lt;span class="s"&gt;platforms&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;windows-8&lt;/span&gt;
+&lt;/pre&gt;
+&lt;p&gt;would result in the latest 12.1.x Chef Omnibus package to be installed.&lt;/p&gt;
+
+&lt;p&gt;Here's an example installing the ChefDK package instead of a vanilla Chef Omnibus package:&lt;/p&gt;
+
+&lt;pre class="highlight yaml"&gt;&lt;span class="nn"&gt;---&lt;/span&gt;
+&lt;span class="s"&gt;provisioner&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;chef_zero&lt;/span&gt;
+  &lt;span class="s"&gt;require_chef_omnibus&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;0.4&lt;/span&gt;
+  &lt;span class="s"&gt;chef_omnibus_install_options&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;-P chefdk&lt;/span&gt;
+
+&lt;span class="s"&gt;platforms&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;windows-8&lt;/span&gt;
+    &lt;span class="s"&gt;provisioner&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+      &lt;span class="s"&gt;chef_omnibus_root&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;$env:systemdrive\opscode\chefdk&lt;/span&gt;
+&lt;/pre&gt;
+&lt;h2 id="full-changeleog"&gt;Full Changeleog&lt;/h2&gt;
+
+&lt;p&gt;(&lt;em&gt;This is a selected roll-up of 1.4.0 pre-release &lt;a href="https://github.com/test-kitchen/test-kitchen/blob/master/CHANGELOG.md"&gt;changelogs&lt;/a&gt;&lt;/em&gt;)&lt;/p&gt;
+
+&lt;h3 id="potentially-breaking-changes"&gt;Potentially breaking changes&lt;/h3&gt;
+
+&lt;p&gt;&lt;strong&gt;Note::&lt;/strong&gt; while a huge amount of effort has gone into preserving backwards compatibility, there could be issues when running this release using certain Drivers and Provisioners, especially ones that are deeply customized. Drivers that inherit directly from &lt;code&gt;Kitchen::Driver::Base&lt;/code&gt; may need to be updated, while Driver that inherit directly from &lt;code&gt;Kitchen::Driver::SSHBase&lt;/code&gt; should continue to operate as before. Other libraries/addons/plugins which patch internals of Test Kitchen's code may break or work differently and would be extremely hard to preserve while adding new functionality. Sadly, this is a tradeoff.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Drivers are no longer responsible for &lt;code&gt;converge&lt;/code&gt;, &lt;code&gt;setup&lt;/code&gt;, &lt;code&gt;verify&lt;/code&gt;, and &lt;code&gt;login&lt;/code&gt; actions. The updated Driver API contract (&lt;a href="https://github.com/test-kitchen/test-kitchen/blob/master/lib/kitchen/driver/base.rb"&gt;Driver::Base&lt;/a&gt;) only requires implementing the &lt;code&gt;#create&lt;/code&gt; and &lt;code&gt;#destroy&lt;/code&gt; methods, same as before. However, for Drivers that directly inherit from &lt;code&gt;Kitchen::Driver::Base&lt;/code&gt;, any custom &lt;code&gt;#converge&lt;/code&gt;, &lt;code&gt;#setup&lt;/code&gt;, &lt;code&gt;#verify&lt;/code&gt;, or &lt;code&gt;#login_command&lt;/code&gt; methods will no longer be called. (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Drivers which inherit directly from &lt;code&gt;Kitchen::Driver::SSHBase&lt;/code&gt; are now considered "Legacy Drivers" as further improvements for these Drivers may not be available in future releases. The previous behavior is preserved, i.e. the Driver's &lt;code&gt;#converge&lt;/code&gt;, &lt;code&gt;#setup&lt;/code&gt;, and &lt;code&gt;#verify&lt;/code&gt; methods are called and all methods signatures (and relative behavior) is preserved. (&lt;a href="https://github.com/test-kitchen/test-kitchen/blob/master/lib/kitchen/driver/ssh_base.rb"&gt;Driver::SSHBase&lt;/a&gt;, &lt;a href="https://github.com/test-kitchen/test-kitchen/commit/d816d6fd1bd21548b485ca91e0ff9303e99a6fbc"&gt;Commit notes&lt;/a&gt;) (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Provisioners are now self-aware, completely owning the &lt;code&gt;converge&lt;/code&gt; action. The original public methods of the Base Provisioner are maintained but are now invoked with a &lt;code&gt;#call(state)&lt;/code&gt; method on the Provisioner object. Provisioner authors may elect to implement the command and sandbox methods, or re-implement the &lt;code&gt;#call&lt;/code&gt; method which may not call any of the previously mentioned methods. (&lt;a href="https://github.com/test-kitchen/test-kitchen/blob/master/lib/kitchen/provisioner/base.rb"&gt;Provisioner::Base&lt;/a&gt;, &lt;a href="https://github.com/test-kitchen/test-kitchen/commit/3196675e519a2fb97af4bcac80ef11f5e37f2537"&gt;Commit notes&lt;/a&gt;) (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Transport are not responsible for the &lt;code&gt;login&lt;/code&gt; command. (&lt;a href="https://github.com/test-kitchen/test-kitchen/commit/ae360a11d8c18ff5d1086ee19b099db1d0422024"&gt;Commit notes&lt;/a&gt;) (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Busser is now a plugin of type Verifier (see below for details on Verifiers). Any external code that directly creates a &lt;code&gt;Kitchen::Busser&lt;/code&gt; object will fail as the class has moved to &lt;code&gt;Kitchen::Verifier::Busser&lt;/code&gt;. Any external code that directly invokes Busser's &lt;code&gt;#sync_cmd&lt;/code&gt; will log a warning and will &lt;strong&gt;not&lt;/strong&gt; transfer test files (authors of plugins may now call &lt;code&gt;instance.transport(state).upload(locals, remote)&lt;/code&gt; in its place). (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Verifiers are responsible for the &lt;code&gt;verify&lt;/code&gt; action. (&lt;a href="https://github.com/test-kitchen/test-kitchen/commit/d62f577003c1920259eb627cc4479c0b21e0c374"&gt;Commit notes&lt;/a&gt;) (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/649"&gt;#649&lt;/a&gt;: Preserve Busser's #setup_cmd, #run_cmd, &amp;amp; #sync_cmd for better backwards compatibility. (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/672"&gt;#672&lt;/a&gt;: Extract WinRM-dependant code from Transport::Winrm into the winrm-transport gem, meaning that WinRM support is now a soft dependency of Test Kitchen, similar to Berkshelf and Librarian-Chef. This means the first time a Winrm Transport is requested, a &lt;code&gt;kitchen&lt;/code&gt; command will crash with a UserError message instructing the user to install the winrm-transport gem. Existing projects which do not use the Winrm Transport will be unaffected and have no extra gem dependencies to manage. (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id="bug-fixes"&gt;Bug fixes&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Issue &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/611"&gt;#611&lt;/a&gt;, pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/673"&gt;#673&lt;/a&gt;: Ensure that secret key is deleted before converge for chef_zero and chef_solo Provisioners. (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Issue &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/389"&gt;#389&lt;/a&gt;, pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/674"&gt;#674&lt;/a&gt;: Expand path for &lt;code&gt;:ssh_key&lt;/code&gt; if provided in kitchen.yml for Ssh Transport. (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/653"&gt;#653&lt;/a&gt;: Consider &lt;code&gt;:require_chef_omnibus = 11&lt;/code&gt; to be a modern version for Chef Provisioners. (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id="new-features"&gt;New features&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;ChefZero Provisioner supports Windows paths and PowerShell commands and works with the WinRM Transport (default behavior for Platform names starting with &lt;code&gt;/^win/&lt;/code&gt;). (&lt;a href="https://github.com/test-kitchen/test-kitchen/blob/master/lib/kitchen/provisioner/chef_zero.rb"&gt;Provisioner::ChefZero&lt;/a&gt;) (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;ChefSolo Provisioner supports Windows paths and PowerShell commands and works with the WinRM Transport (default behavior for Platform names starting with &lt;code&gt;/^win/&lt;/code&gt;). (&lt;a href="https://github.com/test-kitchen/test-kitchen/blob/master/lib/kitchen/provisioner/chef_solo.rb"&gt;Provisioner::ChefSolo&lt;/a&gt;) (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Shell Provisioner supports PowerShell scripts in addition to Bourne shell scripts (&lt;a href="https://github.com/test-kitchen/test-kitchen/blob/master/lib/kitchen/provisioner/shell.rb"&gt;Provisioner::Shell&lt;/a&gt;) (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Platform operating system and shell hinting: By default, Windows platform names (case insensitive platform names starting with &lt;code&gt;/^win/&lt;/code&gt;) will have &lt;code&gt;:os_type&lt;/code&gt; set to &lt;code&gt;"windows"&lt;/code&gt; and &lt;code&gt;:shell_type&lt;/code&gt; set to &lt;code&gt;"powershell"&lt;/code&gt;. By default, non-Windows platform names will have &lt;code&gt;:os_type&lt;/code&gt; set to &lt;code&gt;"unix"&lt;/code&gt; and &lt;code&gt;:shell_type&lt;/code&gt; set to &lt;code&gt;"bourne"&lt;/code&gt;. The methods &lt;code&gt;#windows_os?&lt;/code&gt;, &lt;code&gt;#unix_os?&lt;/code&gt;, &lt;code&gt;#powershell_shell?&lt;/code&gt;, &lt;code&gt;#bourne_shell?&lt;/code&gt;, and &lt;code&gt;#remote_path_join&lt;/code&gt; are available for all Driver, Provisioner, Verifier, and Transport authors. (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;New plugin type: Transport, which executes commands and transfers files to remote instances. (&lt;a href="https://github.com/test-kitchen/test-kitchen/blob/master/lib/kitchen/transport/base.rb"&gt;Transport::Base&lt;/a&gt;) (&lt;a href="https://github.com/afiune"&gt;@afiune&lt;/a&gt;, &lt;a href="https://github.com/mwrock"&gt;@mwrock&lt;/a&gt;, &lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;New Transport: WinRM: which re-uses a remote shell to execute commands and upload files over WinRM. Currently non-SSL/plaintext authentication only. (&lt;a href="https://github.com/test-kitchen/test-kitchen/blob/master/lib/kitchen/transport/winrm.rb"&gt;Transport::Winrm&lt;/a&gt;) (&lt;a href="https://github.com/afiune"&gt;@afiune&lt;/a&gt;, &lt;a href="https://github.com/mwrock"&gt;@mwrock&lt;/a&gt;, &lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;New Transport: SSH, which re-uses one SSH connection where possible. Improvements such as keepalive, retries, and further configuration attributes are included. This replaces the more general &lt;code&gt;Kitchen:SSH&lt;/code&gt; class, which remains in the codebase for plugins that call this class directly. (&lt;a href="https://github.com/test-kitchen/test-kitchen/blob/master/lib/kitchen/transport/ssh.rb"&gt;Transport::Ssh&lt;/a&gt;) (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;New plugin type: Verifier, which executes post-convergence tests on the instance. Busser is now a Verifier. (&lt;a href="https://github.com/test-kitchen/test-kitchen/blob/master/lib/kitchen/verifier/base.rb"&gt;Verifier::Base&lt;/a&gt;) (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Add &lt;a href="d8f1a7db9e506c44f321462e1fba0b1e24994070"&gt;API versioning&lt;/a&gt; metadata to all plugin types. (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/667"&gt;#667&lt;/a&gt;, pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/668"&gt;#668&lt;/a&gt;: Add plugin diagnostics, exposed via &lt;code&gt;kitchen diagnose&lt;/code&gt;. (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/675"&gt;#675&lt;/a&gt;, issue &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/424"&gt;#424&lt;/a&gt;: Add default &lt;code&gt;:compression&lt;/code&gt; &amp;amp; &lt;code&gt;:compression_level&lt;/code&gt; configuration attributes to Ssh Transport.&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/651"&gt;#651&lt;/a&gt;, issue &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/592"&gt;#592&lt;/a&gt;, issue &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/629"&gt;#629&lt;/a&gt;, issue &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/307"&gt;#307&lt;/a&gt;: Add :sudo_command to Provisioners, Verifiers, &amp;amp; ShellOut. (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h4 id="improvements"&gt;Improvements&lt;/h4&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;In addition to supporting setting &lt;code&gt;http_proxy&lt;/code&gt; and &lt;code&gt;https_proxy&lt;/code&gt; environment variables when &lt;code&gt;:http_proxy&lt;/code&gt; and &lt;code&gt;:https_proxy&lt;/code&gt; are set in Provisioner and Verifier blocks, &lt;code&gt;HTTP_PROXY&lt;/code&gt; and &lt;code&gt;HTTPS_PROXY&lt;/code&gt; environment variables will also be set/exported in ChefZero/ChefSolo Provisioners and Busser Verifier. (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/600"&gt;#600&lt;/a&gt;, pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/633"&gt;#633&lt;/a&gt;, issue &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/85"&gt;#85&lt;/a&gt;: Add &lt;code&gt;--log-overwrite&lt;/code&gt; flag to CLI anywhere &lt;code&gt;--log-level&lt;/code&gt; is accepted.  By default it is true and will clear out the log every time Test Kitchen runs. To disable this behavior pass &lt;code&gt;--log-overwrite=false&lt;/code&gt; or &lt;code&gt;--no-log-overwrite&lt;/code&gt;.  You can also configure this with the environment variable &lt;code&gt;KITCHEN_LOG_OVERWRITE&lt;/code&gt;. (&lt;a href="https://github.com/tyler-ball"&gt;@tyler-ball&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Refactor "non-trivial" (i.e. more than a line or two) Bourne and PowerShell code bodies into static files under support/ for better code review by domain experts. (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/530"&gt;#530&lt;/a&gt;, issue &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/429"&gt;#429&lt;/a&gt;: Stop uploading empty directories. (&lt;a href="https://github.com/whiteley"&gt;@whiteley&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/588"&gt;#588&lt;/a&gt;: Change getchef.com to chef.io in ChefZero and ChefSolo Provisioners. (&lt;a href="https://github.com/jdmundrawala"&gt;@jdmundrawala&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/658"&gt;#658&lt;/a&gt;, issue &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/654"&gt;#654&lt;/a&gt;: Updated for sh compatibility based on install.sh code which supports more platforms including Solaris. (&lt;a href="https://github.com/scotthain"&gt;@scotthain&lt;/a&gt;, &lt;a href="https://github.com/curiositycasualty"&gt;@curiositycasualty&lt;/a&gt;, &lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/652"&gt;#652&lt;/a&gt;, pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/666"&gt;#666&lt;/a&gt;, issue &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/556"&gt;#556&lt;/a&gt;: Support symbol values in solo.rb &amp;amp; client.rb for chef_zero and chef_solo Provisioners. (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+&lt;/ul&gt;
+
+</content>
+  </entry>
+  <entry>
+    <title>Test Kitchen 1.3.1 Release Notes</title>
+    <link rel="alternate" href="http://kitchen.ci/blog/test-kitchen-1-3-1-release-notes/"/>
+    <id>http://kitchen.ci/blog/test-kitchen-1-3-1-release-notes/</id>
+    <published>2015-01-16T22:59:00Z</published>
+    <updated>2015-05-08T16:25:55+00:00</updated>
+    <author>
+      <name>Fletcher Nichol</name>
+    </author>
+    <summary type="html">&lt;p&gt;For immediate release: &lt;a href="https://github.com/test-kitchen/test-kitchen/releases/tag/v1.3.1"&gt;Test Kitchen 1.3.1&lt;/a&gt; is available on &lt;a href="https://rubygems.org/gems/test-kitchen"&gt;RubyGems&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;</summary>
+    <content type="html">&lt;p&gt;For immediate release: &lt;a href="https://github.com/test-kitchen/test-kitchen/releases/tag/v1.3.1"&gt;Test Kitchen 1.3.1&lt;/a&gt; is available on &lt;a href="https://rubygems.org/gems/test-kitchen"&gt;RubyGems&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;/p&gt;
+
+&lt;p&gt;Happy Friday! A quick release today to address an &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/580"&gt;issue&lt;/a&gt; that was reported shortly after 1.3.0 went out the door. Given that was a straight up bug, it seemed like a good idea to remedy it as soon as possible.&lt;/p&gt;
+
+&lt;p&gt;In the meantime, the Readme was &lt;a href="https://github.com/test-kitchen/test-kitchen/pull/579"&gt;upgraded&lt;/a&gt; with some pretty &lt;a href="https://github.com/test-kitchen/test-kitchen/blob/master/README.md#test-kitchen"&gt;SVG badgess&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Thank you to Mike Fiedler and Torben Knerr for your attention to detail, and accuracy!&lt;/p&gt;
+
+&lt;h2 id="full-changleog"&gt;Full Changleog&lt;/h2&gt;
+
+&lt;h3 id="bug-fixes"&gt;Bug fixes&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/581"&gt;#581&lt;/a&gt;, issue &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/580"&gt;#580&lt;/a&gt;: Fix omnibus install argument passing bug with missing space character. (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;, &lt;a href="https://github.com/tknerr"&gt;@tknerr&lt;/a&gt;)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id="improvements"&gt;Improvements&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/579"&gt;#579&lt;/a&gt;: Update README.md badges to use SVG. (&lt;a href="https://github.com/miketheman"&gt;@miketheman&lt;/a&gt;)&lt;/li&gt;
+&lt;/ul&gt;
+
+</content>
+  </entry>
+  <entry>
+    <title>Test Kitchen 1.3.0 Release Notes</title>
+    <link rel="alternate" href="http://kitchen.ci/blog/test-kitchen-1-3-0-release-notes/"/>
+    <id>http://kitchen.ci/blog/test-kitchen-1-3-0-release-notes/</id>
+    <published>2015-01-15T22:00:00Z</published>
+    <updated>2015-05-08T16:25:55+00:00</updated>
+    <author>
+      <name>Fletcher Nichol</name>
+    </author>
+    <summary type="html">&lt;p&gt;For immediate release: &lt;a href="https://github.com/test-kitchen/test-kitchen/releases/tag/v1.3.0"&gt;Test Kitchen 1.3.0&lt;/a&gt; is available on &lt;a href="https://rubygems.org/gems/test-kitchen"&gt;RubyGems&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;</summary>
+    <content type="html">&lt;p&gt;For immediate release: &lt;a href="https://github.com/test-kitchen/test-kitchen/releases/tag/v1.3.0"&gt;Test Kitchen 1.3.0&lt;/a&gt; is available on &lt;a href="https://rubygems.org/gems/test-kitchen"&gt;RubyGems&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;/p&gt;
+
+&lt;p&gt;Hey there, how’s it going? It’s been a while, huh? Also welcome—I’ll wager this is the first blog entry you’ve read here. There’s lots we can talk about, but for today let’s focus (and celebrate) a new release of Test Kitchen.&lt;/p&gt;
+
+&lt;p&gt;In terms of code churn and long term viability of the codebase, the biggest change this latest release brings is an upgrade to the project’s health tooling, a full backfilling of unit test coverage, a full reworking of the developer documentation in the form of YARD commenting, and even some refactoring as a result. Most of this work was contained in &lt;a href="https://github.com/test-kitchen/test-kitchen/pull/427"&gt;pull request 427&lt;/a&gt; and will be a pretty dry read for most end users. However the reasoning behind it might be useful to some, so here’s an excerpt from the pull request text:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;So what happens when a project comes to life by inspiration and accident, then gets picked up and starts getting used in the field? Well, it's a balancing act of adding new features and tending the codebase garden so that future features are possible.&lt;/p&gt;
+
+  &lt;p&gt;Let's call this PR a bobcat re-landscaping effort.&lt;/p&gt;
+
+  &lt;p&gt;The goal here is backfill missing unit test coverage in critical parts of the codebase for 3 big reasons:&lt;/p&gt;
+
+  &lt;ol&gt;
+    &lt;li&gt;Make future &lt;a href="http://c2.com/cgi/wiki?WhatIsRefactoring"&gt;refactoring&lt;/a&gt; quicker and lower stress. It becomes extremely expensive to properly refactor without a safety net of tests–they help enforce the previous contract for any new or modified production code.&lt;/li&gt;
+    &lt;li&gt;Allow more safety when accepting pull requests and contributions. Once a more complete code coverage is achieved, we will start to ask for accompanying unit and/or integration tests to accompany pull requests. This benefits everyone.&lt;/li&gt;
+    &lt;li&gt;Provide more use cases and developer documentation when navigating the codebase. Developer docs and code examples are one dimension of a successful "documented project".&lt;/li&gt;
+  &lt;/ol&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Let’s take a peek at some of the highlights…&lt;/p&gt;
+
+&lt;h2 id="highlights"&gt;Highlights&lt;/h2&gt;
+
+&lt;h3 id="pr-381456-add-configurable-defaults-for-chef-solo-chef-client-and-chef-omnibus-paths"&gt;PR 381/456: Add configurable defaults for chef-solo, chef-client, and chef omnibus paths&lt;/h3&gt;
+
+&lt;p&gt;For Chef provisioners (namely, &lt;code&gt;chef_solo&lt;/code&gt; and &lt;code&gt;chef_zero&lt;/code&gt;) there are 2 (well 3) new configuration attributes available for customization:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code&gt;chef_omnibus_root&lt;/code&gt;: is used when checking for a Chef Omnibus installation and to calculate the default path to the &lt;code&gt;chef-client&lt;/code&gt; or &lt;code&gt;chef-solo&lt;/code&gt; binaries. By default, this value is &lt;code&gt;”/opt/chef”&lt;/code&gt;. If you would rather use the &lt;a href="https://downloads.chef.io/chef-dk/"&gt;ChefDK&lt;/a&gt; distribution, then you could set this value to &lt;code&gt;”/opt/chefdk”&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;chef_client_path&lt;/code&gt;: is used with the &lt;code&gt;chef_zero&lt;/code&gt; provisioner and  lets you customize your path to the &lt;code&gt;chef-client&lt;/code&gt; binary when performing a Chef run. By default, this value is &lt;code&gt;”/opt/chef/bin/chef-client&lt;/code&gt;” but will automatically adjusted if &lt;code&gt;chef_omnibus_root&lt;/code&gt; is changed (see above).&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;chef_solo_path&lt;/code&gt;: is used with the &lt;code&gt;chef_solo&lt;/code&gt; provisioner and  lets you customize your path to the &lt;code&gt;chef-solo&lt;/code&gt; binary when performing a Chef run. By default, this value is &lt;code&gt;”/opt/chef/bin/chef-solo&lt;/code&gt;” but will automatically adjusted if &lt;code&gt;chef_omnibus_root&lt;/code&gt; is changed (see above).&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id="pr-489-introduce-the-chefomnibusinstalloptions-config-attribute-to-be-able-to-pass-additional-arguments-to-the-chef-installer-script"&gt;PR 489: Introduce the :chef_omnibus_install_options config attribute to be able to pass additional arguments to the Chef installer script&lt;/h3&gt;
+
+&lt;p&gt;This new configuration attribute allows you to pass additional arguments to the &lt;code&gt;install.sh&lt;/code&gt; script which can install not only Omnibus Chef packages, but also the ChefDK distribution which is very useful for workstation development. Here’s a more complete example which also uses the new &lt;code&gt;chef_omnibus_root&lt;/code&gt; configuration attribute as described above:&lt;/p&gt;
+
+&lt;pre class="highlight yaml"&gt;&lt;span class="nn"&gt;---&lt;/span&gt;
+&lt;span class="s"&gt;driver&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;vagrant&lt;/span&gt;
+
+&lt;span class="s"&gt;provisioner&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;chef_zero&lt;/span&gt;
+  &lt;span class="s"&gt;chef_omnibus_install_options&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;-P chefdk&lt;/span&gt;
+  &lt;span class="s"&gt;chef_omnibus_root&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;/opt/chefdk&lt;/span&gt;
+
+&lt;span class="s"&gt;platforms&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;ubuntu-12.04&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;centos-6.4&lt;/span&gt;
+
+&lt;span class="s"&gt;suites&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+  &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;name&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt; &lt;span class="s"&gt;default&lt;/span&gt;
+    &lt;span class="s"&gt;run_list&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+      &lt;span class="pi"&gt;-&lt;/span&gt; &lt;span class="s"&gt;workstation_amazing&lt;/span&gt;
+    &lt;span class="s"&gt;attributes&lt;/span&gt;&lt;span class="pi"&gt;:&lt;/span&gt;
+&lt;/pre&gt;
+&lt;p&gt;Note that updating the &lt;code&gt;chef_omnibus_root&lt;/code&gt; is required so that the path to the &lt;code&gt;chef-client&lt;/code&gt; binary becomes &lt;code&gt;”/opt/chefdk/bin/chef-client”&lt;/code&gt;. Commence workstation testing!&lt;/p&gt;
+
+&lt;h3 id="pr-478-buffer-logger-output--fix-chef-run-output-formatting"&gt;PR 478: Buffer Logger output &amp;amp; fix Chef run output formatting&lt;/h3&gt;
+
+&lt;p&gt;Speaking personally, this is one of the most exciting improvements in this release. This returns the Chef run output to be free of clutter, noise, and duplication.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;Taken from the text of the &lt;a href="https://github.com/test-kitchen/test-kitchen/pull/478"&gt;pull request&lt;/a&gt;:&lt;/em&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;For more detail you can check out the commit message for the included commits.&lt;/p&gt;
+
+  &lt;p&gt;Turns out there were competing issues:&lt;/p&gt;
+
+  &lt;ul&gt;
+    &lt;li&gt;Adding the explicit &lt;code&gt;--log_level info&lt;/code&gt; option on &lt;code&gt;chef-solo&lt;/code&gt; and &lt;code&gt;chef-client&lt;/code&gt; were conflating both outputs together&lt;/li&gt;
+    &lt;li&gt;The SSH connection is requesting a TTY (for older/stock sudoers policies) which caused the Chef runs to believe they were running in interactive mode&lt;/li&gt;
+    &lt;li&gt;The interactive mode also enabled coloring which isn't necessary since Kitchen is coloring the output itself&lt;/li&gt;
+  &lt;/ul&gt;
+
+  &lt;p&gt;When I attempted to use &lt;code&gt;--force-logger --log_level info&lt;/code&gt; (in interactive) I was seeing double output of each line. When I force the Chef run to operate non-interactively (by piping through cat: &lt;code&gt;chef-solo -force-logger --log_level info ... | cat&lt;/code&gt;) this resolved the double output.&lt;/p&gt;
+
+  &lt;p&gt;It seems to me that fixing the output formatting will go so far to make things better here, but is it possible that a user will need to make use of the classic logger format and thus need an option to switch this out? I'm not sold either way, but know that any formatting cleanup will be an improvement and help bring clarity back to the Chef runs here.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h3 id="pr-481-disable-color-output-when-no-tty-is-present"&gt;PR 481: Disable color output when no TTY is present&lt;/h3&gt;
+
+&lt;p&gt;This should help clean up Test Kitchen output in CI environments, using the &lt;code&gt;kitchen&lt;/code&gt; command with unix pipes, etc.&lt;/p&gt;
+
+&lt;p&gt;In other words:&lt;/p&gt;
+
+&lt;pre class="highlight shell"&gt;kitchen &lt;span class="nb"&gt;test&lt;/span&gt; | cat
+&lt;/pre&gt;
+&lt;p&gt;Should &lt;em&gt;not&lt;/em&gt; output colors.&lt;/p&gt;
+
+&lt;p&gt;Currently, the only catch is that colors are still used inside the instances for tools such as RSpec. This may require work in the Busser component.&lt;/p&gt;
+
+&lt;h3 id="pr-555-correct-global-yaml-merge-order-to-lowest-from-highest"&gt;PR 555: Correct global YAML merge order to lowest (from highest)&lt;/h3&gt;
+
+&lt;p&gt;This addresses a merge order bug-of-intention between the following files:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code&gt;.kitchen.yml&lt;/code&gt; (project config)&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;.kitchen.local.yml&lt;/code&gt; (local config)&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;$HOME/.kitchen/config.yml&lt;/code&gt; (global config)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The intended behavior was that:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;baseline common configuration can go in the global config&lt;/li&gt;
+  &lt;li&gt;any colliding values in the project config "win" over the global
+config&lt;/li&gt;
+  &lt;li&gt;any colliding values in the local config "win" over the project
+config (and consequently also the global config)&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;This pull request restores the intended merge semantics.&lt;/p&gt;
+
+&lt;h2 id="full-changleog"&gt;Full Changleog&lt;/h2&gt;
+
+&lt;h3 id="upstream-changes"&gt;Upstream changes&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/558"&gt;#558&lt;/a&gt;, pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/557"&gt;#557&lt;/a&gt;: Update omnibus download URL to chef.io. (&lt;a href="https://github.com/scarolan"&gt;@scarolan&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/531"&gt;#531&lt;/a&gt;, pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/521"&gt;#521&lt;/a&gt;: Update mixlib-shellout dependency to be greater or equal to 1.2 and less than 3.0. (&lt;a href="https://github.com/lamont-granquist"&gt;@lamont-granquist&lt;/a&gt;)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id="bug-fixes"&gt;Bug fixes&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/555"&gt;#555&lt;/a&gt;, issue &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/524"&gt;#524&lt;/a&gt;, issue &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/343"&gt;#343&lt;/a&gt;: (&lt;strong&gt;Breaking&lt;/strong&gt;) Correct global YAML merge order to lowest (from highest).&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/416"&gt;#416&lt;/a&gt;: Use &lt;code&gt;Gem::GemRunner&lt;/code&gt; to install drivers with &lt;code&gt;kitchen init&lt;/code&gt; generator (addresses opscode/chef-dk&lt;a href="https://github.com/test-kitchen/test-kitchen/issues/20"&gt;#20&lt;/a&gt;). (&lt;a href="https://github.com/mcquin"&gt;@mcquin&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/399"&gt;#399&lt;/a&gt;: Sleep before retrying SSH#establish_connection. (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/527"&gt;#527&lt;/a&gt;: Rescue SSH authentication failures to use retry/timeout connection logic. (&lt;a href="https://github.com/chrishenry"&gt;@chrishenry&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/363"&gt;#363&lt;/a&gt;: Ensure that integer chef config attributes get placed in solo.rb/client.rb properly. (&lt;a href="https://github.com/benlangfeld"&gt;@benlangfeld&lt;/a&gt;, &lt;a href="https://github.com/sethvargo"&gt;@sethvargo&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/431"&gt;#431&lt;/a&gt;: Check for zero byte state files. (&lt;a href="https://github.com/rhass"&gt;@rhass&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/554"&gt;#554&lt;/a&gt;, pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/543"&gt;#543&lt;/a&gt;: Replace &lt;code&gt;/&lt;/code&gt; with &lt;code&gt;-&lt;/code&gt; in Instance names, allowing instance names to be used as server hostnames in most cases. (&lt;a href="https://github.com/grubernaut"&gt;@grubernaut&lt;/a&gt;, &lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id="new-features"&gt;New features&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/373"&gt;#373&lt;/a&gt;: Add new subcommand 'exec'. (&lt;a href="https://github.com/sawanoboly"&gt;@sawanoboly&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/397"&gt;#397&lt;/a&gt;: Introduce the &lt;code&gt;:chef_zero_port&lt;/code&gt; config attribute to the chef_zero provisioner. (&lt;a href="https://github.com/jtgiri"&gt;@jtgiri&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/381"&gt;#381&lt;/a&gt;, pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/456"&gt;#456&lt;/a&gt;: Add configurable defaults for chef-solo, chef-client, and chef omnibus paths. (&lt;a href="https://github.com/sethvargo"&gt;@sethvargo&lt;/a&gt;, &lt;a href="https://github.com/robcoward"&gt;@robcoward&lt;/a&gt;, &lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/489"&gt;#489&lt;/a&gt;: Introduce the &lt;code&gt;:chef_omnibus_install_options&lt;/code&gt; config attribute to be able to pass additional arguments to the Chef installer script. (&lt;a href="https://github.com/ringods"&gt;@ringods&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/549"&gt;#549&lt;/a&gt;: Introduce the &lt;code&gt;:chef_zero_host&lt;/code&gt; config attribute to the chef_zero provisioner. (&lt;a href="https://github.com/jochenseeber"&gt;@jochenseeber&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/454"&gt;#454&lt;/a&gt;: Customize &lt;code&gt;:ssh_timeout&lt;/code&gt; and &lt;code&gt;:ssh_retries&lt;/code&gt;. (&lt;a href="https://github.com/ekrupnik"&gt;@ekrupnik&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/510"&gt;#510&lt;/a&gt;, issue &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/166"&gt;#166&lt;/a&gt;: Add support for site-cookbooks when using Librarian. (&lt;a href="https://github.com/jstriebel"&gt;@jstriebel&lt;/a&gt;)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id="improvements"&gt;Improvements&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/427"&gt;#427&lt;/a&gt;: Backfilling spec coverage and refactoring: technical debt edition. Epically huge, finally complete. (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/478"&gt;#478&lt;/a&gt;, issue &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/433"&gt;#433&lt;/a&gt;, issue &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/352"&gt;#352&lt;/a&gt;: Buffer Logger output &amp;amp; fix Chef run output formatting. (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/481"&gt;#481&lt;/a&gt;: Disable color output when no TTY is present. (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/526"&gt;#526&lt;/a&gt;, pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/462"&gt;#462&lt;/a&gt;, issue &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/375"&gt;#375&lt;/a&gt;: Die on &lt;code&gt;kitchen login&lt;/code&gt; if instance is not created. (&lt;a href="https://github.com/daniellockard"&gt;@daniellockard&lt;/a&gt;, &lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/504"&gt;#504&lt;/a&gt;: Fix 2 tests in &lt;code&gt;SSHBase&lt;/code&gt; to reflect their intent. (&lt;a href="https://github.com/jgoldschrafe"&gt;@jgoldschrafe&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/450"&gt;#450&lt;/a&gt;: Update help description for CLI subcommands. (&lt;a href="https://github.com/MarkGibbons"&gt;@MarkGibbons&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/477"&gt;#477&lt;/a&gt;: Bump 'kitchen help' into new Usage section in README and add how to use "-l". (&lt;a href="https://github.com/curiositycasualty"&gt;@curiositycasualty&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/567"&gt;#567&lt;/a&gt;: Pass the template filename down to Erb for &lt;code&gt;__FILE__&lt;/code&gt; et al. (&lt;a href="https://github.com/coderanger"&gt;@coderanger&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/498"&gt;#498&lt;/a&gt;: Fix doc comment in &lt;code&gt;Kitchen::Loader::YAML.new&lt;/code&gt;. (&lt;a href="https://github.com/jaimegildesagredo"&gt;@jaimegildesagredo&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/507"&gt;#507&lt;/a&gt;: Clarify comments in configuration loader. (&lt;a href="https://github.com/martinb3"&gt;@martinb3&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/366"&gt;#366&lt;/a&gt;: Fix glaring "Transfering" -&amp;gt; "Transferring" typo. (&lt;a href="https://github.com/srenatus"&gt;@srenatus&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/457"&gt;#457&lt;/a&gt;: Fix "confiuration" -&amp;gt; "configuration" typo in README. (&lt;a href="https://github.com/michaelkirk"&gt;@michaelkirk&lt;/a&gt;)&lt;/li&gt;
+  &lt;li&gt;Pull request &lt;a href="https://github.com/test-kitchen/test-kitchen/issues/370"&gt;#370&lt;/a&gt;: Use Ruby 2.1 instead of 2.1.0 for CI. (&lt;a href="https://github.com/justincampbell"&gt;@justincampbell&lt;/a&gt;)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id="heads-up"&gt;Heads up&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Drop Ruby 1.9.2 from TravisCI build matrix (support for Ruby 1.9.2 will be a "best effort"). (&lt;a href="https://github.com/fnichol"&gt;@fnichol&lt;/a&gt;)&lt;/li&gt;
+&lt;/ul&gt;
+
+</content>
+  </entry>
+</feed>
